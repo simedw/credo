@@ -20,6 +20,8 @@ defmodule Credo.Check.Warning.BoolOperationOnSameValues do
 
   @bool_ops [:and, :or, :&&, :||]
 
+  use Credo.Check.Traversal, on: [:defmodule]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

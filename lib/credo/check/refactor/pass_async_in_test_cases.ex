@@ -23,6 +23,8 @@ defmodule Credo.Check.Refactor.PassAsyncInTestCases do
       ]
     ]
 
+  use Credo.Check.Traversal, on: [:use]
+
   def run(source_file, params \\ []) do
     ctx = Context.build(source_file, params, __MODULE__)
     result = Credo.Code.prewalk(source_file, &walk/2, ctx)

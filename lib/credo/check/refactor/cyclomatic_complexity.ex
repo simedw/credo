@@ -38,6 +38,8 @@ defmodule Credo.Check.Refactor.CyclomaticComplexity do
     cond: 1
   ]
 
+  use Credo.Check.Traversal, on: @def_ops
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

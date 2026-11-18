@@ -24,6 +24,8 @@ defmodule Credo.Check.Readability.VariableNames do
 
   @special_var_names [:__CALLER__, :__DIR__, :__ENV__, :__MODULE__]
 
+  use Credo.Check.Traversal, on: [:=, :->, :<-, :def, :defp]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

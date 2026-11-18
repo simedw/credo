@@ -25,6 +25,8 @@ defmodule Credo.Check.Warning.ExpensiveEmptyEnumCheck do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:==, :!=, :===, :!==, :>, :<, :>=, :<=]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

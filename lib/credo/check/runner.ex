@@ -5,6 +5,7 @@ defmodule Credo.Check.Runner do
   # by the current `Credo.Execution`.
 
   alias Credo.Check.Params
+  alias Credo.Check.Runner.Traversal
   alias Credo.CLI.Output.UI
   alias Credo.Execution
 
@@ -23,15 +24,39 @@ defmodule Credo.Check.Runner do
       |> Enum.map(fn {_key, check_tuples} -> check_tuples end)
 
     Enum.each(check_tuples_by_starting_phase, fn check_tuples ->
-      check_tuples
-      |> Task.async_stream(&run_check(exec, &1),
-        timeout: :infinity,
-        ordered: false
-      )
-      |> Stream.run()
+      run_phase(source_files, exec, check_tuples)
     end)
 
     :ok
+  end
+
+  defp run_phase(source_files, exec, check_tuples) do
+    {shared, legacy} =
+      Enum.split_with(check_tuples, fn {check, _params} ->
+        not exec.config.debug and Traversal.supported?(check)
+      end)
+
+    jobs = Enum.map(legacy, &{:legacy, &1})
+    jobs = if shared == [], do: jobs, else: [{:shared, shared} | jobs]
+
+    jobs
+    |> Task.async_stream(
+      fn
+        {:legacy, check_tuple} ->
+          run_check(exec, check_tuple)
+
+        {:shared, checks} ->
+          plans =
+            Enum.map(checks, fn {check, params} = tuple ->
+              {check, params, source_files_for_check(exec, tuple)}
+            end)
+
+          Traversal.run(source_files, exec, plans)
+      end,
+      timeout: :infinity,
+      ordered: false
+    )
+    |> Stream.run()
   end
 
   defp run_check(exec, {check, params}) do
@@ -41,6 +66,23 @@ defmodule Credo.Check.Runner do
   end
 
   defp do_run_check(exec, {check, params}) do
+    source_files = source_files_for_check(exec, {check, params})
+
+    try do
+      check.run_on_all_source_files(exec, source_files, params)
+    rescue
+      error ->
+        warn_about_failed_run(check, source_files)
+
+        if exec.config.crash_on_error do
+          reraise error, __STACKTRACE__
+        else
+          []
+        end
+    end
+  end
+
+  defp source_files_for_check(exec, {check, params}) do
     rerun_files_that_changed = Params.get_rerun_files_that_changed(params)
 
     known_files = exec |> Execution.get_source_files() |> Enum.map(& &1.filename)
@@ -87,24 +129,10 @@ defmodule Credo.Check.Runner do
           end
       end
 
-    source_files =
-      exec
-      |> Execution.get_source_files()
-      |> filter_source_files(rerun_files_that_changed)
-      |> filter_source_files(found_relevant_files)
-
-    try do
-      check.run_on_all_source_files(exec, source_files, params)
-    rescue
-      error ->
-        warn_about_failed_run(check, source_files)
-
-        if exec.config.crash_on_error do
-          reraise error, __STACKTRACE__
-        else
-          []
-        end
-    end
+    exec
+    |> Execution.get_source_files()
+    |> filter_source_files(rerun_files_that_changed)
+    |> filter_source_files(found_relevant_files)
   end
 
   defp filter_source_files(_source_files, :skip_run) do
@@ -116,8 +144,10 @@ defmodule Credo.Check.Runner do
   end
 
   defp filter_source_files(source_files, files_included) do
+    files_included = MapSet.new(files_included)
+
     Enum.filter(source_files, fn source_file ->
-      Enum.member?(files_included, Path.expand(source_file.filename))
+      MapSet.member?(files_included, Path.expand(source_file.filename))
     end)
   end
 

@@ -29,6 +29,8 @@ defmodule Credo.Check.Readability.ParenthesesOnZeroArityDefs do
 
   @def_ops [:def, :defp, :defmacro, :defmacrop]
 
+  use Credo.Check.Traversal, on: @def_ops
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

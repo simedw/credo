@@ -38,6 +38,8 @@ defmodule Credo.Check.Readability.PipeIntoAnonymousFunctions do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:|>]
+
   @impl true
   def run(source_file, params \\ []) do
     ctx = Context.build(source_file, params, __MODULE__)

@@ -35,6 +35,8 @@ defmodule Credo.Check.Warning.OperationOnSameValues do
     {:-, "Operation", 0}
   ]
 
+  use Credo.Check.Traversal, on: @def_ops ++ @ops ++ [:@]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

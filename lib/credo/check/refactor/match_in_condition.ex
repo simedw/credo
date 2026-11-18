@@ -54,6 +54,8 @@ defmodule Credo.Check.Refactor.MatchInCondition do
   # all non-special-form operators
   @all_nonspecial_operators ~W(! && ++ -- .. <> =~ |> || != !== * + - / ** < <= == === > >= ||| &&& <<< >>> <<~ ~>> <~ ~> <~> <|> ^^^ ~~~ +++ ---)a
 
+  use Credo.Check.Traversal, on: [:if, :unless]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

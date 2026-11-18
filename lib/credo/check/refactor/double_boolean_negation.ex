@@ -40,6 +40,8 @@ defmodule Credo.Check.Refactor.DoubleBooleanNegation do
   @negation_operators [:!, :not]
   defguard is_doube_negation(a, b) when a in @negation_operators and b in @negation_operators
 
+  use Credo.Check.Traversal, on: @negation_operators
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

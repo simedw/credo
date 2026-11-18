@@ -10,7 +10,11 @@ defmodule Credo.Test.CheckRunner do
 
   defp issues_for(source_files, check, exec, params)
        when is_list(source_files) do
-    :ok = check.run_on_all_source_files(exec, source_files, params)
+    if Credo.Check.Runner.Traversal.supported?(check) do
+      :ok = Credo.Check.Runner.Traversal.run(source_files, exec, [{check, params, source_files}])
+    else
+      :ok = check.run_on_all_source_files(exec, source_files, params)
+    end
 
     Enum.flat_map(source_files, &get_issues_from_source_file(&1, exec))
   end

@@ -37,6 +37,8 @@ defmodule Credo.Check.Readability.FunctionNames do
   # all non-special-form operators
   @all_nonspecial_operators ~W(! && ++ -- .. <> =~ @ |> || != !== * + - / ** < <= == === > >= ||| &&& <<< >>> <<~ ~>> <~ ~> <~> <|> ^^^ ~~~ +++ ---)a
 
+  use Credo.Check.Traversal, on: @def_ops
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params \\ []) do
@@ -45,6 +47,14 @@ defmodule Credo.Check.Readability.FunctionNames do
 
     Map.values(result.issues)
   end
+
+  @impl Credo.Check.Traversal
+  def init_traversal(source_file, params) do
+    Context.build(source_file, params, __MODULE__, %{issues: %{}})
+  end
+
+  @impl Credo.Check.Traversal
+  def finish_traversal(context), do: Map.values(context.issues)
 
   # Ignore sigil definitions
   for sigil <- @all_sigil_atoms do

@@ -29,6 +29,8 @@ defmodule Credo.Check.Refactor.RedundantWithClauseResult do
 
   require Credo.Code
 
+  use Credo.Check.Traversal, on: [:with]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

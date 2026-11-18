@@ -27,7 +27,8 @@ defmodule Credo.Code do
   @doc """
   Prewalks a given `Credo.SourceFile`'s AST or a given AST.
 
-  Technically this is just a wrapper around `Macro.prewalk/3`.
+  Visits nodes in the same order as `Macro.prewalk/3`, including callback replacements,
+  without rebuilding the transformed AST that this function discards.
   """
   def prewalk(ast_or_source_file, fun, accumulator \\ [])
 
@@ -38,9 +39,38 @@ defmodule Credo.Code do
   end
 
   def prewalk(source_ast, fun, accumulator) do
-    {_, accumulated} = Macro.prewalk(source_ast, accumulator, fun)
+    do_prewalk(source_ast, fun, accumulator)
+  end
 
-    accumulated
+  defp do_prewalk(node, fun, accumulator) do
+    {node, accumulator} = fun.(node, accumulator)
+    prewalk_children(node, fun, accumulator)
+  end
+
+  defp prewalk_children({form, _meta, args}, fun, accumulator) when is_atom(form) do
+    prewalk_args(args, fun, accumulator)
+  end
+
+  defp prewalk_children({form, _meta, args}, fun, accumulator) do
+    accumulator = do_prewalk(form, fun, accumulator)
+    prewalk_args(args, fun, accumulator)
+  end
+
+  defp prewalk_children({left, right}, fun, accumulator) do
+    accumulator = do_prewalk(left, fun, accumulator)
+    do_prewalk(right, fun, accumulator)
+  end
+
+  defp prewalk_children(list, fun, accumulator) when is_list(list) do
+    prewalk_args(list, fun, accumulator)
+  end
+
+  defp prewalk_children(_node, _fun, accumulator), do: accumulator
+
+  defp prewalk_args(args, _fun, accumulator) when is_atom(args), do: accumulator
+
+  defp prewalk_args(args, fun, accumulator) when is_list(args) do
+    Enum.reduce(args, accumulator, &do_prewalk(&1, fun, &2))
   end
 
   @doc """

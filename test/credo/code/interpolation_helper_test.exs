@@ -26,6 +26,18 @@ defmodule Credo.Code.InterpolationHelperTest do
   @no_interpolations_source ~S[134 + 145]
   @no_interpolations_positions []
 
+  test "leaves sources without interpolation markers byte-for-byte unchanged" do
+    for source <- [
+          "",
+          "plain text",
+          "héllo\r\nworld\n\n",
+          "call(1, 2)\n",
+          ~S["# {not_interpolation}"]
+        ] do
+      assert InterpolationHelper.replace_interpolations(source, "$") == source
+    end
+  end
+
   test "should replace string interpolations with given character" do
     source = ~S'''
     def fun() do

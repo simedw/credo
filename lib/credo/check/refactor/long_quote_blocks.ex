@@ -72,6 +72,8 @@ defmodule Credo.Check.Refactor.LongQuoteBlocks do
       ]
     ]
 
+  use Credo.Check.Traversal, on: [:quote]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

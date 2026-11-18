@@ -47,16 +47,28 @@ defmodule Credo.Check.Readability.PredicateFunctionNames do
 
   @def_ops [:def, :defp, :defmacro]
 
+  use Credo.Check.Traversal, on: @def_ops
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do
     ctx = Context.build(source_file, params, __MODULE__, %{issue_candidates: []})
     result = Credo.Code.prewalk(source_file, &walk/2, ctx)
 
+    finish_traversal(result)
+  end
+
+  @impl Credo.Check.Traversal
+  def init_traversal(source_file, params) do
+    Context.build(source_file, params, __MODULE__, %{issue_candidates: []})
+  end
+
+  @impl Credo.Check.Traversal
+  def finish_traversal(result) do
     if result.issue_candidates == [] do
       []
     else
-      impl_list = Credo.Code.prewalk(source_file, &find_impls(&1, &2))
+      impl_list = Credo.Code.prewalk(result.source_file, &find_impls(&1, &2))
 
       result.issue_candidates
       |> Enum.reject(fn {_, signature} -> signature in impl_list end)

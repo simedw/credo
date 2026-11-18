@@ -37,6 +37,8 @@ defmodule Credo.Check.Refactor.WithClauses do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:with]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

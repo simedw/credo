@@ -19,6 +19,8 @@ defmodule Credo.Check.Refactor.FunctionArity do
 
   @def_ops [:def, :defp, :defmacro]
 
+  use Credo.Check.Traversal, on: @def_ops
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

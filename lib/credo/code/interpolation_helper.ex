@@ -6,13 +6,17 @@ defmodule Credo.Code.InterpolationHelper do
   @doc false
   def replace_interpolations(source, char \\ " ", filename \\ "nofilename")
       when is_binary(source) do
-    positions = interpolation_positions(source, filename)
-    lines = String.split(source, "\n")
+    if :binary.match(source, "\#{") == :nomatch do
+      source
+    else
+      positions = interpolation_positions(source, filename)
+      lines = String.split(source, "\n")
 
-    positions
-    |> Enum.reverse()
-    |> Enum.reduce(lines, &replace_line(&1, &2, char))
-    |> Enum.join("\n")
+      positions
+      |> Enum.reverse()
+      |> Enum.reduce(lines, &replace_line(&1, &2, char))
+      |> Enum.join("\n")
+    end
   end
 
   defp replace_line({line_no, col_start, line_no, col_end}, lines, char) do

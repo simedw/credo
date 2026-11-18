@@ -23,6 +23,8 @@ defmodule Credo.Check.Refactor.Apply do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:@, :apply, :|>]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

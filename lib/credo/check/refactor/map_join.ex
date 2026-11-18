@@ -22,6 +22,8 @@ defmodule Credo.Check.Refactor.MapJoin do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:|>, {:remote, [:Enum], :join}]
+
   @doc false
   def run(source_file, params \\ []) do
     ctx = Context.build(source_file, params, __MODULE__)

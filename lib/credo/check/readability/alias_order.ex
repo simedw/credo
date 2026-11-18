@@ -55,6 +55,8 @@ defmodule Credo.Check.Readability.AliasOrder do
       ]
     ]
 
+  use Credo.Check.Traversal, on: [:alias]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do
@@ -63,6 +65,16 @@ defmodule Credo.Check.Readability.AliasOrder do
     Credo.Code.prewalk(source_file, &walk/2, ctx)
     |> extract_group_from_memo()
     |> find_issues()
+  end
+
+  @impl Credo.Check.Traversal
+  def init_traversal(source_file, params) do
+    Context.build(source_file, params, __MODULE__, %{alias_memo: [], alias_groups: []})
+  end
+
+  @impl Credo.Check.Traversal
+  def finish_traversal(context) do
+    context |> extract_group_from_memo() |> find_issues()
   end
 
   defp walk(

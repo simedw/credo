@@ -46,6 +46,8 @@ defmodule Credo.Check.Readability.WithSingleClause do
 
   alias Credo.Code.Block
 
+  use Credo.Check.Traversal, on: [:with]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

@@ -66,18 +66,31 @@ defmodule Credo.Check.Design.AliasUsage do
 
   @keywords [:alias]
 
+  use Credo.Check.Traversal, on: [:defmodule]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do
     ctx = Context.build(source_file, params, __MODULE__)
 
     result = Credo.Code.prewalk(source_file, &walk/2, ctx)
-    filter_issues_if_called_more_often_than(result.issues, ctx.params.if_called_more_often_than)
+
+    finish_traversal(result)
+  end
+
+  @impl Credo.Check.Traversal
+  def finish_traversal(ctx) do
+    filter_issues_if_called_more_often_than(ctx.issues, ctx.params.if_called_more_often_than)
   end
 
   defp walk({:defmodule, _, _} = ast, ctx) do
-    aliases = Credo.Code.Module.aliases(ast)
-    mod_deps = Credo.Code.Module.modules(ast)
+    aliases = ast |> Credo.Code.Module.aliases() |> Enum.group_by(&Credo.Code.Name.last/1)
+
+    mod_deps =
+      ast
+      |> Credo.Code.Module.modules()
+      |> Enum.filter(&(Credo.Code.Name.parts_count(&1) > 1))
+      |> Enum.group_by(&Credo.Code.Name.last/1)
 
     ctx =
       Credo.Code.prewalk(
@@ -160,10 +173,10 @@ defmodule Credo.Check.Design.AliasUsage do
       excluded_with_only?(mod_list, only) ->
         {ast, ctx}
 
-      conflicting_with_aliases?(mod_list, aliases) ->
+      conflicting_name?(mod_list, aliases) ->
         {ast, ctx}
 
-      conflicting_with_other_modules?(mod_list, mod_deps) ->
+      conflicting_name?(mod_list, mod_deps) ->
         {ast, ctx}
 
       Enum.count(mod_list) <= if_nested_deeper_than ->
@@ -197,31 +210,16 @@ defmodule Credo.Check.Design.AliasUsage do
     !String.match?(name, only)
   end
 
-  # Returns true if mod_list and alias_name would result in the same alias
-  # since they share the same last name.
-  defp conflicting_with_aliases?(mod_list, aliases) do
-    last_name = Credo.Code.Name.last(mod_list)
+  # Only modules sharing the proposed alias's last name can conflict.
+  defp conflicting_name?(mod_list, modules_by_last_name) do
+    case Map.get(modules_by_last_name, Credo.Code.Name.last(mod_list), []) do
+      [] ->
+        false
 
-    Enum.find(aliases, &conflicting_alias?(&1, mod_list, last_name))
-  end
-
-  defp conflicting_alias?(alias_name, mod_list, last_name) do
-    full_name = Credo.Code.Name.full(mod_list)
-    alias_last_name = Credo.Code.Name.last(alias_name)
-
-    full_name != alias_name && alias_last_name == last_name
-  end
-
-  # Returns true if mod_list and any dependent module would result in the same alias
-  # since they share the same last name.
-  defp conflicting_with_other_modules?(mod_list, mod_deps) do
-    full_name = Credo.Code.Name.full(mod_list)
-    last_name = Credo.Code.Name.last(mod_list)
-
-    (mod_deps -- [full_name])
-    |> Enum.filter(&(Credo.Code.Name.parts_count(&1) > 1))
-    |> Enum.map(&Credo.Code.Name.last/1)
-    |> Enum.any?(&(&1 == last_name))
+      modules ->
+        full_name = Credo.Code.Name.full(mod_list)
+        Enum.any?(modules, &(&1 != full_name))
+    end
   end
 
   defp tuple?(t) when is_tuple(t), do: true

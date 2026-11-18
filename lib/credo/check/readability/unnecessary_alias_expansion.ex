@@ -22,6 +22,8 @@ defmodule Credo.Check.Readability.UnnecessaryAliasExpansion do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:alias]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

@@ -54,6 +54,8 @@ defmodule Credo.Check.Readability.ModuleDoc do
 
   alias Credo.Code.Module
 
+  use Credo.Check.Traversal, on: [:defmodule]
+
   @doc false
   def run(%SourceFile{filename: filename} = source_file, params \\ []) do
     if Path.extname(filename) == ".exs" do
@@ -64,6 +66,17 @@ defmodule Credo.Check.Readability.ModuleDoc do
       result.issues
     end
   end
+
+  @impl Credo.Check.Traversal
+  def init_traversal(source_file, params) do
+    Context.build(source_file, params, __MODULE__, %{
+      ignore_file?: Path.extname(source_file.filename) == ".exs"
+    })
+  end
+
+  @impl Credo.Check.Traversal
+  def traverse_node(_node, %{ignore_file?: true} = context), do: {nil, context}
+  def traverse_node(node, context), do: super(node, context)
 
   defp walk({:defmodule, _meta, _arguments} = ast, ctx) do
     mod_name = Module.name(ast)

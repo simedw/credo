@@ -3,6 +3,64 @@ defmodule Credo.CodeTest do
 
   require Credo.Code
 
+  describe "prewalk/3" do
+    test "matches Macro.prewalk for calls, lists, pairs, literals and variable contexts" do
+      ast =
+        quote do
+          defmodule Sample do
+            @value %{one: 1, two: {2, 3}}
+            def run(arg), do: Mod.call(arg, [four: 4], fn x -> x + 5 end)
+          end
+        end
+
+      for tree <- [
+            ast,
+            [],
+            nil,
+            :literal,
+            42,
+            "text",
+            {1, 2},
+            [1, [2, 3]],
+            {:var, [], Sample},
+            %Credo.SourceFile{filename: "opaque"}
+          ] do
+        # A SourceFile within a tree is a literal, rather than another file to load.
+        tree = [tree]
+        callback = fn node, visited -> {node, [node | visited]} end
+        {_, expected} = Macro.prewalk(tree, [], callback)
+
+        assert Credo.Code.prewalk(tree, callback) == expected
+      end
+    end
+
+    test "follows replaced children and prunes replaced subtrees" do
+      ast = quote do: Mod.call(1, skip(2), {3, 4})
+
+      callback = fn
+        {:skip, _, _} = node, visited -> {nil, [node | visited]}
+        1, visited -> {{:inserted, [], [10, 11]}, [1 | visited]}
+        {{:., _, _}, _, _} = node, visited -> {node, [node | visited]}
+        3, visited -> {[30, 31], [3 | visited]}
+        node, visited -> {node, [node | visited]}
+      end
+
+      {_, expected} = Macro.prewalk(ast, [], callback)
+      assert Credo.Code.prewalk(ast, callback) == expected
+      refute 2 in expected
+      assert 10 in expected
+      assert 31 in expected
+    end
+
+    test "loads a source file before walking and accepts a non-list accumulator" do
+      source_file = Credo.SourceFile.parse("Mod.call(arg, {1, 2})", "sample.ex")
+      callback = fn node, count -> {node, count + 1} end
+      {_, expected} = Macro.prewalk(Credo.SourceFile.ast(source_file), 0, callback)
+
+      assert Credo.Code.prewalk(source_file, callback, 0) == expected
+    end
+  end
+
   test "it should NOT report expected code" do
     lines =
       ~S'''

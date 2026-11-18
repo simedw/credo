@@ -22,6 +22,8 @@ defmodule Credo.Check.Readability.ModuleAttributeNames do
 
   alias Credo.Code.Name
 
+  use Credo.Check.Traversal, on: [:@]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

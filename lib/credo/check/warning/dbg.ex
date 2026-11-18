@@ -16,6 +16,9 @@ defmodule Credo.Check.Warning.Dbg do
       ]
     ]
 
+  use Credo.Check.Traversal,
+    on: [:@, :dbg, :&, :|>, {:remote, [:Kernel], :dbg}, {:remote, [:"Elixir", :Kernel], :dbg}]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

@@ -39,6 +39,8 @@ defmodule Credo.Check.Readability.SeparateAliasRequire do
 
   alias Credo.Code.Block
 
+  use Credo.Check.Traversal, on: [:defmodule]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params \\ []) do

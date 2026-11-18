@@ -12,6 +12,9 @@ defmodule Credo.Check.Warning.IoInspect do
       """
     ]
 
+  use Credo.Check.Traversal,
+    on: [{:remote, [:IO], :inspect}, {:remote, [:"Elixir", :IO], :inspect}]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

@@ -3,6 +3,30 @@ defmodule Credo.Check.Design.AliasUsageTest do
 
   @described_check Credo.Check.Design.AliasUsage
 
+  test "indexes conflicts by last name without suppressing unrelated modules" do
+    issues =
+      ~S"""
+      defmodule Sample do
+        alias AliasNamespace.Shared
+
+        def run do
+          OtherNamespace.Shared.call()
+          FirstNamespace.Duplicate.call()
+          SecondNamespace.Duplicate.call()
+          UniqueNamespace.Available.call()
+          UniqueNamespace.Available.call()
+        end
+      end
+      """
+      |> to_source_file()
+      |> run_check(@described_check)
+
+    assert Enum.map(issues, & &1.trigger) == [
+             "UniqueNamespace.Available",
+             "UniqueNamespace.Available"
+           ]
+  end
+
   #
   # single alias cases
   #

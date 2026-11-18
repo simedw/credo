@@ -12,6 +12,8 @@ defmodule Credo.Check.Warning.IExPry do
       """
     ]
 
+  use Credo.Check.Traversal, on: [{:remote, [:IEx], :pry}]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

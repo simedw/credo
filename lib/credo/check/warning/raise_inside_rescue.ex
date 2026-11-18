@@ -37,6 +37,8 @@ defmodule Credo.Check.Warning.RaiseInsideRescue do
 
   @def_ops [:def, :defp, :defmacro, :defmacrop]
 
+  use Credo.Check.Traversal, on: [:try] ++ @def_ops
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

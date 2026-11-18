@@ -21,6 +21,9 @@ defmodule Credo.Check.Refactor.UtcNowTruncate do
       """
     ]
 
+  use Credo.Check.Traversal,
+    on: [:|>, {:remote, [:DateTime], :truncate}, {:remote, [:NaiveDateTime], :truncate}]
+
   @doc false
   def run(source_file, params \\ []) do
     ctx = Context.build(source_file, params, __MODULE__)

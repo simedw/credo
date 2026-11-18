@@ -22,6 +22,8 @@ defmodule Credo.Check.Warning.OperationWithConstantResult do
     {:*, "the left side of the expression", 1}
   ]
 
+  use Credo.Check.Traversal, on: [:&, :@] ++ Enum.map(@ops_and_constant_results, &elem(&1, 0))
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do

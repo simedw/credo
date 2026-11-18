@@ -24,6 +24,8 @@ defmodule Credo.Check.Refactor.NegatedConditionsInUnless do
       """
     ]
 
+  use Credo.Check.Traversal, on: [:@, :unless]
+
   @doc false
   @impl true
   def run(%SourceFile{} = source_file, params) do
